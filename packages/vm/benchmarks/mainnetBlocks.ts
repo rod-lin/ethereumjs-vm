@@ -1,32 +1,29 @@
 import * as fs from 'fs'
-import Account from '@ethereumjs/account'
-import { bufferToInt, toBuffer, setLengthLeft } from 'ethereumjs-util'
-import { encode } from 'rlp'
+import { bufferToInt } from 'ethereumjs-util'
 import blockFromRPC from '@ethereumjs/block/dist/from-rpc'
+import { Block } from '@ethereumjs/block'
 import VM from '../dist'
-import { StateManager, DefaultStateManager } from '../dist/state'
-import BN = require('bn.js')
-import Benchmark = require('benchmark')
-import Common from '@ethereumjs/common'
+import { getPreState } from './util'
 
-const suite = new Benchmark.Suite()
+const onAdd = async (vm: VM, block: Block) => {
+  // TODO: validate tx, add receipt and gas usage checks
+  await vm.copy().runBlock({
+    block,
+    generate: true,
+    skipBlockValidation: true,
+  })
+}
 
-async function main() {
-  const args = process.argv
-  if (args.length < 3 || args.length > 4) {
-    console.log('Insufficient arguments')
-    console.log('Usage: node BENCHMARK_SCRIPT BLOCK_FIXTURE [NUM_SAMPLES]')
-    return process.exit(1)
-  }
+const onCycle = (event: any) => {
+  console.log(String(event.target))
+}
 
-  let data = JSON.parse(fs.readFileSync(args[2], 'utf8'))
+export async function mainnetBlocks(suite: any, blockFixture: string, numSamples?: number) {
+  let data = JSON.parse(fs.readFileSync(blockFixture, 'utf8'))
   if (!Array.isArray(data)) data = [data]
   console.log(`Total number of blocks in data set: ${data.length}`)
 
-  let numSamples = data.length
-  if (args.length === 4) {
-    numSamples = Number(args[3])
-  }
+  numSamples = numSamples ? numSamples : data.length
   console.log(`Number of blocks to sample: ${numSamples}`)
   data = data.slice(0, numSamples)
 
@@ -35,75 +32,27 @@ async function main() {
     const blockNumber = bufferToInt(block.header.number)
 
     const stateManager = await getPreState(blockData.preState)
-    const vm = new VM({
-      stateManager,
-      common: new Common({ chain: 'mainnet', hardfork: 'muirGlacier' }),
-    })
+    const vm = new VM({ stateManager, hardfork: 'muirGlacier' })
 
-    suite.add(`Block ${blockNumber}`, async () => {
-      // TODO: validate tx, add receipt and gas usage checks
-      await vm.copy().runBlock({
-        block,
-        generate: true,
-        skipBlockValidation: true,
-      })
-    })
-  }
-
-  suite
-    .on('cycle', function (event: any) {
-      console.log(String(event.target))
-    })
-    .run()
-}
-
-export interface StateTestPreAccount {
-  balance: string
-  code: string
-  nonce: string
-  storage: { [k: string]: string }
-}
-
-export async function getPreState(pre: {
-  [k: string]: StateTestPreAccount
-}): Promise<StateManager> {
-  const state = new DefaultStateManager()
-  await state.checkpoint()
-  for (const k in pre) {
-    const kBuf = toBuffer(k)
-    const obj = pre[k]
-    const code = toBuffer(obj.code)
-    const acc = new Account()
-    acc.nonce = hexToBuffer(obj.nonce)
-    acc.balance = hexToBuffer(obj.balance)
-    const storageTrie = state._trie.copy()
-    storageTrie.root = null!
-    for (const sk in obj.storage) {
-      const sv = obj.storage[sk]
-      const valBN = new BN(sv.slice(2), 16)
-      if (valBN.isZero()) continue
-      const val = encode(valBN.toBuffer('be'))
-      const key = setLengthLeft(Buffer.from(sk.slice(2), 'hex'), 32)
-      await storageTrie.put(key, val)
+    if (suite) {
+      suite.add(`Block ${blockNumber}`, onAdd)
+    } else {
+      onAdd(vm, block)
     }
-    acc.stateRoot = storageTrie.root
-    await state.putAccount(kBuf, acc)
-    await state.putContractCode(kBuf, code)
   }
-  await state.commit()
-  return state
+
+  if (suite) {
+    suite
+    .on('cycle', onCycle)
+    .run()
+  }
 }
 
-const hexToBuffer = (h: string, allowZero: boolean = false): Buffer => {
-  const buf = toBuffer(h)
-  if (!allowZero && buf.toString('hex') === '00') {
-    return Buffer.alloc(0)
-  }
-  return buf
-}
-
-main()
+const args = process.argv
+if (args[2] !== 'mainnetBlocks') {
+  mainnetBlocks(undefined, args[2], args[3] ? Number(args[3]) : undefined)
   .then()
   .catch((e: Error) => {
     throw e
   })
+}
