@@ -10,7 +10,8 @@
   "scripts": {
     "build": "ethereumjs-config-build",
     "build:benchmarks": "npm run build && tsc -p tsconfig.benchmarks.json",
-    "benchmarks": "node --max-old-space-size=4096 ./benchmarks/run.js mainnetBlocks benchmarks/fixture/blocks-prestate.json",
+    "benchmarks": "node --max-old-space-size=4096 ./benchmarks/run.js benchmarks",
+    "profiling": "0x ./benchmarks/run.js profiling",
     "prepublishOnly": "npm run lint && npm run build && npm run test:buildIntegrity",
     "coverage": "nyc npm run coverage:test && nyc report --reporter=lcov",
     "coverage:test": "tape './tests/api/**/*.js' ./tests/tester.js --state --dist",
@@ -59,6 +60,7 @@
     "mcl-wasm": "^0.4.5"
   },
   "devDependencies": {
+    "0x": "^4.7.5",
     "@ethereumjs/config-nyc": "^1.1.1",
     "@ethereumjs/config-prettier": "^1.1.1",
     "@ethereumjs/config-tsc": "^1.1.1",
