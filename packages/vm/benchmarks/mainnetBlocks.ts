@@ -3,7 +3,7 @@ import { bufferToInt } from 'ethereumjs-util'
 import blockFromRPC from '@ethereumjs/block/dist/from-rpc'
 import { Block } from '@ethereumjs/block'
 import VM from '../dist'
-import { getPreState } from './util'
+import { getPreState, getBlockchain } from './util'
 import Common from '@ethereumjs/common'
 
 const BLOCK_FIXTURE = 'benchmarks/fixture/blocks-prestate.json'
@@ -67,7 +67,8 @@ export async function mainnetBlocks(suite: any, numSamples?: number) {
     const blockNumber = bufferToInt(block.header.number)
 
     const stateManager = await getPreState(blockData.preState, common)
-    const vm = new VM({ stateManager, hardfork: 'muirGlacier' })
+    const blockchain = getBlockchain(blockData.blockhashes)
+    const vm = new VM({ stateManager, hardfork: 'muirGlacier', blockchain: <any>blockchain })
 
     if (suite) {
       suite.add(`Block ${blockNumber}`, onAdd)
