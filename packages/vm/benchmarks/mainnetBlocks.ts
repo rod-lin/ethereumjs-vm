@@ -4,16 +4,31 @@ import blockFromRPC from '@ethereumjs/block/dist/from-rpc'
 import { Block } from '@ethereumjs/block'
 import VM from '../dist'
 import { getPreState } from './util'
+import Common from '@ethereumjs/common'
 
 const BLOCK_FIXTURE = 'benchmarks/fixture/blocks-prestate.json'
 
 const onAdd = async (vm: VM, block: Block) => {
-  // TODO: validate tx, add receipt and gas usage checks
-  await vm.copy().runBlock({
+  const vmCopy = vm.copy()
+  let result = await vmCopy.runBlock({
     block,
     generate: true,
     skipBlockValidation: true,
   })
+
+  // verify the receipt root, the logs bloom and the gas used after block execution, throw if any of these is not the expected value
+  if (
+    result.receiptRoot &&
+    result.receiptRoot.toString('hex') !== block.header.receiptTrie.toString('hex')
+  ) {
+    throw new Error('invalid receiptTrie ')
+  }
+  if (result.logsBloom.toString('hex') !== block.header.bloom.toString('hex')) {
+    throw new Error('invalid bloom ')
+  }
+  if (bufferToInt(block.header.gasUsed) !== Number(result.gasUsed)) {
+    throw new Error('invalid gasUsed ')
+  }
 }
 
 export async function mainnetBlocks(suite: any, numSamples?: number) {
@@ -25,11 +40,13 @@ export async function mainnetBlocks(suite: any, numSamples?: number) {
   console.log(`Number of blocks to sample: ${numSamples}`)
   data = data.slice(0, numSamples)
 
+  const common = new Common('mainnet', 'muirGlacier')
+
   for (const blockData of data) {
     const block = blockFromRPC(blockData.block)
     const blockNumber = bufferToInt(block.header.number)
 
-    const stateManager = await getPreState(blockData.preState)
+    const stateManager = await getPreState(blockData.preState, common)
     const vm = new VM({ stateManager, hardfork: 'muirGlacier' })
 
     if (suite) {

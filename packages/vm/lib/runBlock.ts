@@ -62,6 +62,22 @@ export interface RunBlockResult {
    * Results of executing the transactions in the block
    */
   results: RunTxResult[]
+  /**
+   * The stateRoot after executing the block
+   */
+  stateRoot: Buffer
+  /**
+   * The gas used after executing the block
+   */
+  gasUsed: BN
+  /**
+   * The bloom filter of the LOGs (events) after executing the block
+   */
+  logsBloom: Buffer
+  /**
+   * The receipt root after executing the block
+   */
+  receiptRoot: Buffer
 }
 
 /**
@@ -176,19 +192,25 @@ export default async function runBlock(this: VM, opts: RunBlockOpts): Promise<Ru
     }
   }
 
+  const results: RunBlockResult = {
+    receipts: result.receipts,
+    results: result.results,
+    stateRoot: stateRoot,
+    gasUsed: result.gasUsed,
+    logsBloom: result.bloom.bitvector,
+    receiptRoot: result.receiptRoot,
+  }
+
   /**
    * The `afterBlock` event
    *
    * @event Event: afterBlock
-   * @type {Object}
+   * @type {RunBlockResult}
    * @property {Object} result emits the results of processing a block
    */
-  await this._emit('afterBlock', {
-    receipts: result.receipts,
-    results: result.results,
-  })
+  await this._emit('afterBlock', results)
 
-  return { receipts: result.receipts, results: result.results }
+  return results
 }
 
 /**
