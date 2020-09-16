@@ -1,8 +1,8 @@
 import VM from '../../dist'
 
-import * as assert from 'assert'
 import * as path from 'path'
 import * as fs from 'fs'
+import assert from 'assert'
 import { privateToAddress, bufferToHex } from 'ethereumjs-util'
 import Account from '@ethereumjs/account'
 import { Transaction } from '@ethereumjs/tx'
