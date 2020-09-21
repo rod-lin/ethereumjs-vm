@@ -1,4 +1,4 @@
-import * as tape from 'tape'
+import tape from 'tape'
 import { BN, toBuffer, keccak256, KECCAK256_RLP } from 'ethereumjs-util'
 import Common from '@ethereumjs/common'
 import Account from '@ethereumjs/account'
