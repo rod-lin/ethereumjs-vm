@@ -251,7 +251,7 @@ function createOpcodes(opcodes: {
         code,
         fullName: getFullname(code, value.name),
         ...value,
-      }),
+      })
     )
   }
   return result
@@ -297,13 +297,19 @@ export function getOpcodesForHF(common: Common): OpcodeList {
     }
   }
 
-  for (let key in opcodeBuilder) {
-    let baseFee = common.param('gasPrices', opcodeBuilder[key].name.toLowerCase())
+  for (const key in opcodeBuilder) {
+    const baseFee = common.param(
+      'gasPrices',
+      opcodeBuilder[key].name.toLowerCase()
+    )
     // explicitly verify that we have defined a base fee
     if (baseFee === undefined) {
       throw new Error('base fee not defined for: ' + opcodeBuilder[key].name)
     }
-    opcodeBuilder[key].fee = common.param('gasPrices', opcodeBuilder[key].name.toLowerCase())
+    opcodeBuilder[key].fee = common.param(
+      'gasPrices',
+      opcodeBuilder[key].name.toLowerCase()
+    )
   }
 
   return createOpcodes(opcodeBuilder)

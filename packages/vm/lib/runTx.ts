@@ -50,7 +50,10 @@ export interface RunTxResult extends EVMResult {
 /**
  * @ignore
  */
-export default async function runTx(this: VM, opts: RunTxOpts): Promise<RunTxResult> {
+export default async function runTx(
+  this: VM,
+  opts: RunTxOpts
+): Promise<RunTxResult> {
   if (opts === undefined) {
     throw new Error('invalid input, opts must be provided')
   }
@@ -106,24 +109,34 @@ async function _runTx(this: VM, opts: RunTxOpts): Promise<RunTxResult> {
 
   // Check from account's balance and nonce
   let fromAccount = await state.getAccount(tx.getSenderAddress())
-  if (!opts.skipBalance && new BN(fromAccount.balance).lt(tx.getUpfrontCost())) {
+  if (
+    !opts.skipBalance &&
+    new BN(fromAccount.balance).lt(tx.getUpfrontCost())
+  ) {
     throw new Error(
       `sender doesn't have enough funds to send tx. The upfront cost is: ${tx
         .getUpfrontCost()
         .toString()}` +
-        ` and the sender's account only has: ${new BN(fromAccount.balance).toString()}`,
+        ` and the sender's account only has: ${new BN(
+          fromAccount.balance
+        ).toString()}`
     )
-  } else if (!opts.skipNonce && !new BN(fromAccount.nonce).eq(new BN(tx.nonce))) {
+  } else if (
+    !opts.skipNonce &&
+    !new BN(fromAccount.nonce).eq(new BN(tx.nonce))
+  ) {
     throw new Error(
       `the tx doesn't have the correct nonce. account has nonce of: ${new BN(
-        fromAccount.nonce,
-      ).toString()} tx has nonce of: ${new BN(tx.nonce).toString()}`,
+        fromAccount.nonce
+      ).toString()} tx has nonce of: ${new BN(tx.nonce).toString()}`
     )
   }
   // Update from account's nonce and balance
   fromAccount.nonce = toBuffer(new BN(fromAccount.nonce).addn(1))
   fromAccount.balance = toBuffer(
-    new BN(fromAccount.balance).sub(new BN(tx.gasLimit).mul(new BN(tx.gasPrice))),
+    new BN(fromAccount.balance).sub(
+      new BN(tx.gasLimit).mul(new BN(tx.gasPrice))
+    )
   )
   await state.putAccount(tx.getSenderAddress(), fromAccount)
 
@@ -171,7 +184,9 @@ async function _runTx(this: VM, opts: RunTxOpts): Promise<RunTxResult> {
   // Update miner's balance
   const minerAccount = await state.getAccount(block.header.coinbase)
   // add the amount spent on gas to the miner's account
-  minerAccount.balance = toBuffer(new BN(minerAccount.balance).add(results.amountSpent))
+  minerAccount.balance = toBuffer(
+    new BN(minerAccount.balance).add(results.amountSpent)
+  )
 
   // Put the miner account into the state. If the balance of the miner account remains zero, note that
   // the state.putAccount function puts this into the "touched" accounts. This will thus be removed when
