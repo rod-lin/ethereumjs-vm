@@ -1,5 +1,5 @@
 import Tx from '../src/transaction'
-import * as tape from 'tape'
+import tape from 'tape'
 import { toBuffer } from 'ethereumjs-util'
 import * as minimist from 'minimist'
 import { ForkName, ForkNamesMap, OfficialTransactionTestData } from './types'

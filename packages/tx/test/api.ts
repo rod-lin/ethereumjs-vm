@@ -1,4 +1,4 @@
-import * as tape from 'tape'
+import tape from 'tape'
 import { Buffer } from 'buffer'
 import { rlp, zeros, privateToPublic, toBuffer } from 'ethereumjs-util'
 

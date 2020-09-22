@@ -1,4 +1,4 @@
-import * as tape from 'tape'
+import tape from 'tape'
 import { Buffer } from 'buffer'
 import { bufferToHex } from 'ethereumjs-util'
 import Common from '@ethereumjs/common'
